@@ -75,15 +75,16 @@ const imageScreen = z
 
 const oledScreen = z.union([textScreen, imageScreen]);
 
+// Default to plain, reliable multi-line text (the proven layout). Icons and
+// image/logo screens are opt-in — some firmware does not render an icon next to
+// multi-line text, so we never enable that by default.
 const DEFAULT_SCREENS: z.input<typeof oledScreen>[] = [
-  { title: 'Logo', image: 'claude', seconds: 3 },
   {
     title: 'Live block',
-    icon: 'money',
     lines: ['5h ${block.cost}  ${block.timeLeft}', 'use ${block.usagePct}  ${block.tokens}'],
   },
-  { title: 'Burn', icon: 'lightning', lines: ['burn ${block.burnRate}', 'proj ${block.projCost}'] },
-  { title: 'Totals', icon: 'clock', lines: ['today ${today.cost}', 'month ${month.cost}'] },
+  { title: 'Burn', lines: ['burn ${block.burnRate}', 'proj ${block.projCost}'] },
+  { title: 'Totals', lines: ['today ${today.cost}', 'month ${month.cost}'] },
 ];
 
 const DEFAULT_BINDINGS: z.input<typeof keyBinding>[] = [

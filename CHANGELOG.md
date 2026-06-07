@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-06-08
+
+### Fixed
+- **OLED rendered blank by default in 0.2.0.** Enabling per-screen icons (a
+  range-based screen handler with `icon-id` next to multi-line text) and a logo
+  image event stacked on the same screen were accepted by GameSense but did not
+  render. The default OLED is back to the proven plain multi-line text rotation.
+  Icons and image/logo screens remain available but are now **opt-in** and
+  documented as device-dependent (use `sscu preview` to check).
+
 ## [0.2.0] — 2026-06-08
 
 ### Added

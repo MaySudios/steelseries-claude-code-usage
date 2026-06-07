@@ -55,24 +55,23 @@ oled:
   deviceType: screened        # "screened" (any) or "screened-128x40" (Apex Pro/7)
   rotateSeconds: 4            # default seconds per screen (0 = never rotate)
   screens:
-    - title: Logo
-      image: claude
-      seconds: 3
     - title: Live block
-      icon: money
       lines:
         - "5h \${block.cost}  \${block.timeLeft}"
         - "use \${block.usagePct}  \${block.tokens}"
     - title: Burn
-      icon: lightning
       lines:
         - "burn \${block.burnRate}"
         - "proj \${block.projCost}"
     - title: Totals
-      icon: clock
       lines:
         - "today \${today.cost}"
         - "month \${month.cost}"
+    # Optional extras — uncomment and run \`sscu preview\` to check them.
+    # NOTE: many keyboards do NOT render an icon next to MULTI-line text; use an
+    # icon only with a single line, or use a full-screen image/logo screen.
+    # - { title: Logo, image: claude, seconds: 3 }          # built-in logo (or a .pbm path)
+    # - { title: Cost, icon: money, lines: ["5h \${block.cost}"] }  # single line + icon
 
 # --- Per-key RGB --------------------------------------------------------------
 # Each binding reads a metric's 0-100 value and lights "keys" (HID names/codes).

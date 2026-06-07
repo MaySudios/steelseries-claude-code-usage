@@ -33,24 +33,23 @@ oled:
   deviceType: screened
   rotateSeconds: 4
   screens:
-    - title: Logo
-      image: claude
-      seconds: 3
     - title: Live block
-      icon: money
       lines:
         - '5h ${block.cost}  ${block.timeLeft}'
         - 'use ${block.usagePct}  ${block.tokens}'
     - title: Burn
-      icon: lightning
       lines:
         - 'burn ${block.burnRate}'
         - 'proj ${block.projCost}'
     - title: Totals
-      icon: clock
       lines:
         - 'today ${today.cost}'
         - 'month ${month.cost}'
+    # Optional extras (run `sscu preview` to check). NOTE: many keyboards do not
+    # render an icon next to MULTI-line text — use an icon with a single line, or
+    # a full-screen image/logo screen.
+    # - { title: Logo, image: claude, seconds: 3 }
+    # - { title: Cost, icon: money, lines: ['5h ${block.cost}'] }
 
 # --- Per-key RGB --------------------------------------------------------------
 # type: gauge | threshold | pulse
