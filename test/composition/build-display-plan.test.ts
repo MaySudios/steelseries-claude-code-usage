@@ -10,13 +10,9 @@ describe('buildDisplayPlan (defaults)', () => {
     expect(plan.screen?.lineKeys).toEqual(['line0', 'line1']); // default text screens are 2 lines
   });
 
-  it('uses no icons by default (single-frame text handler)', () => {
-    expect(plan.screen?.iconIds).toEqual([0]);
-    expect(plan.images).toHaveLength(0);
-  });
-
-  it('produces a 3-screen text rotation', () => {
-    expect(renderPlan.screens.map((s) => s.kind)).toEqual(['text', 'text', 'text']);
+  it('produces a 3-screen text rotation (2 lines each)', () => {
+    expect(renderPlan.screens).toHaveLength(3);
+    expect(renderPlan.screens.every((s) => s.lines.length === 2)).toBe(true);
   });
 
   it('builds one key event per binding with uppercase event names', () => {
@@ -49,20 +45,12 @@ describe('buildDisplayPlan (toggles)', () => {
     expect(renderPlan.keyMetrics).toHaveLength(0);
   });
 
-  it('supports opt-in icons and a built-in logo image screen', () => {
+  it('honours per-screen durations', () => {
     const config = parseConfig({
-      oled: {
-        screens: [
-          { image: 'claude' },
-          { icon: 'money', lines: ['a'] },
-          { icon: 'clock', lines: ['b'] },
-        ],
-      },
+      oled: { rotateSeconds: 4, screens: [{ lines: ['a'], seconds: 9 }, { lines: ['b'] }] },
     });
-    const { plan, renderPlan } = buildDisplayPlan(config);
-    expect(plan.images?.map((i) => i.id)).toEqual(['claude']);
-    expect(plan.screen?.iconIds).toEqual([4, 15]);
-    expect(renderPlan.screens.map((s) => s.kind)).toEqual(['image', 'text', 'text']);
+    const { renderPlan } = buildDisplayPlan(config);
+    expect(renderPlan.screens.map((s) => s.seconds)).toEqual([9, 4]); // 2nd falls back to rotateSeconds
   });
 
   it('resolves key names to HID codes in handlers', () => {

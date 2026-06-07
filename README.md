@@ -32,14 +32,15 @@ Everything is **local‑first**: it parses the same `~/.claude/projects/**/*.jso
 
 ## Features
 
-- 🖥️ **OLED screens** — multiple rotating screens with templated text, **built‑in icons**, per‑screen duration, and **image/logo screens** (a built‑in Claude splash or your own `.pbm`).
+- 🖥️ **OLED screens** — multiple rotating, templated text screens with per‑screen duration (live‑block cost, burn rate, today/month, …).
 - 🌈 **Per‑key RGB** — `gauge` (bar across keys), `threshold` (severity colour + flash), and `pulse` (a calm, idle‑off "Claude is generating right now" indicator).
-- 👀 **Terminal preview** — `sscu preview` shows your screens (as art) and key colours without touching the keyboard.
+- 👀 **Terminal preview** — `sscu preview` shows your screens and key colours without touching the keyboard.
+- 🎛️ **Configurable in SteelSeries GG** — appears under Apps with Screen + Illumination tabs you can tweak natively.
 - 🧮 **Accurate cost** — the ccusage cost model (4 token classes × per‑model pricing), with `auto`/`calculate`/`display` modes.
 - ⏱️ **5‑hour blocks** — live burn rate, projection, and headroom‑vs‑peak.
 - 🔌 **Offline‑capable** — bundled pricing fallback; live [LiteLLM](https://github.com/BerriAI/litellm) pricing when online.
 - ⚙️ **Configurable** — a single annotated YAML/JSON file decides what shows where.
-- 🧪 **Tested** — 170+ unit tests, clean hexagonal architecture (SOLID/DRY/KISS).
+- 🧪 **Tested** — 150+ unit tests, clean hexagonal architecture (SOLID/DRY/KISS).
 - 🖱️ **Cross‑platform** — Windows & macOS (anywhere SteelSeries Engine runs).
 
 ## Requirements
@@ -160,7 +161,7 @@ Lines are plain text with `${metric.id}` placeholders.
 - **`threshold`** — solid colour by value `bands`, with an optional `flash` above a level.
 - **`pulse`** — dark below `idleBelow`, then a calm pulse that scales gently from `minHz` to `maxHz`. Set `steady: true` to just light up solid when active instead of flashing.
 
-OLED screens can be **text** (with `lines`, an optional built‑in `icon`, and a per‑screen `seconds`) or an **image** (`image: claude` for the built‑in logo, or a path to a `.pbm`). Run `sscu preview` to see them.
+OLED screens are up to **2 lines** of templated text, each with its own `seconds`. Run `sscu preview` to see them. (Raw bitmaps / icons aren't used — GameSense doesn't render them reliably across firmware; text is what real OLED apps use.)
 
 **Keys** accept friendly names (`a`–`z`, `0`–`9`, `f1`–`f12`, `space`, `enter`, `esc`, `tab`, arrows, `scrolllock`, `printscreen`, `insert`, …) or raw USB HID codes.
 

@@ -25,9 +25,8 @@ usageWarnPct: 70
 usageCriticalPct: 90
 
 # --- OLED screens -------------------------------------------------------------
-# Each screen is TEXT (lines + optional icon) or IMAGE (logo/bitmap).
-# Text lines use ${metric.id} placeholders. icon: built-in name. image: "claude"
-# or a .pbm path. seconds: per-screen duration (defaults to rotateSeconds).
+# Up to 2 lines of text per screen. Lines use ${metric.id} placeholders.
+# seconds: per-screen duration (defaults to rotateSeconds).
 oled:
   enabled: true
   deviceType: screened
@@ -45,11 +44,6 @@ oled:
       lines:
         - 'today ${today.cost}'
         - 'month ${month.cost}'
-    # Optional extras (run `sscu preview` to check). NOTE: many keyboards do not
-    # render an icon next to MULTI-line text — use an icon with a single line, or
-    # a full-screen image/logo screen.
-    # - { title: Logo, image: claude, seconds: 3 }
-    # - { title: Cost, icon: money, lines: ['5h ${block.cost}'] }
 
 # --- Per-key RGB --------------------------------------------------------------
 # type: gauge | threshold | pulse

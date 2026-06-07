@@ -12,14 +12,10 @@ import { type MetricResolver, renderTemplate } from './metric-resolver.js';
 import { type SnapshotProvider } from './snapshot-provider.js';
 
 /** A screen in the rotation, with its own display duration. */
-export type RenderScreen =
-  | {
-      readonly kind: 'text';
-      readonly lines: readonly string[];
-      readonly iconId: number;
-      readonly seconds: number;
-    }
-  | { readonly kind: 'image'; readonly imageId: string; readonly seconds: number };
+export interface RenderScreen {
+  readonly lines: readonly string[];
+  readonly seconds: number;
+}
 
 /** Tells the service how to turn resolved metrics into a {@link DisplayFrame}. */
 export interface RenderPlan {
@@ -112,12 +108,7 @@ export class PluginService {
   private currentScreenContent(): ScreenContent | undefined {
     const screen = this.currentScreen();
     if (screen === undefined) return undefined;
-    if (screen.kind === 'image') return { kind: 'image', imageId: screen.imageId };
-    return {
-      kind: 'text',
-      lines: screen.lines.map((line) => renderTemplate(line, this.metrics)),
-      iconId: screen.iconId,
-    };
+    return { lines: screen.lines.map((line) => renderTemplate(line, this.metrics)) };
   }
 
   get currentMetrics(): ReadonlyMap<string, Metric> {

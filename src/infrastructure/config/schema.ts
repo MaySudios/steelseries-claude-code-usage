@@ -50,30 +50,20 @@ const pulseBinding = z.object({
 
 const keyBinding = z.discriminatedUnion('type', [gaugeBinding, thresholdBinding, pulseBinding]);
 
-const iconValue = z.union([z.string(), z.number().int().min(0).max(43)]);
-
 const textScreen = z
   .object({
     title: z.string().optional(),
-    /** OLED rows, top to bottom. Use ${metric.id} placeholders. */
+    /** OLED rows (max 2 on 128x40), top to bottom. Use ${metric.id} placeholders. */
     lines: z.array(z.string()).min(1),
-    /** Built-in icon shown in the left 32 px (name or id). */
-    icon: iconValue.optional(),
     /** Override the global rotateSeconds for this screen. */
     seconds: z.number().min(0).max(3600).optional(),
   })
   .strict();
 
-const imageScreen = z
-  .object({
-    title: z.string().optional(),
-    /** Built-in image name (`claude`) or a path to a PBM bitmap. */
-    image: z.string().min(1),
-    seconds: z.number().min(0).max(3600).optional(),
-  })
-  .strict();
-
-const oledScreen = z.union([textScreen, imageScreen]);
+// NOTE: image/bitmap screens were removed — dynamic OLED bitmaps do not render
+// reliably across SteelSeries firmware (GameSense SDK issues #119/#61). OLED
+// content is text only, which is what real GameSense OLED apps use.
+const oledScreen = textScreen;
 
 // Default to plain, reliable multi-line text (the proven layout). Icons and
 // image/logo screens are opt-in — some firmware does not render an icon next to

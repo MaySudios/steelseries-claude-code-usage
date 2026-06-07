@@ -4,9 +4,36 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-06-08
+
+Verified live on real Apex Pro hardware: text + per-key RGB render reliably;
+raw bitmaps do not.
+
+### Removed
+
+- **Image/logo screens and per-screen icons.** Dynamic OLED bitmaps and
+  icon-beside-text do not render across SteelSeries firmware (confirmed on real
+  hardware; GameSense SDK issues #119/#61). The bitmap/PBM/image code was removed
+  rather than shipped non-working — the OLED is now text only, which is exactly
+  what real GameSense OLED apps use.
+
+### Changed
+
+- OLED rendering reworked from research on real GameSense OLED apps: one text
+  event whose frame changes, sending only the active page each tick (pages fully
+  replace, never stack). Max 2 lines (3+ can crash the Engine).
+- `sscu preview` now renders screens as plain boxed text + the colored key list.
+
+### Kept
+
+- Rotating multi-line text screens with per-screen `seconds`.
+- Calm, real-time burn indicator; per-key gauge/threshold/pulse.
+- Native configuration inside SteelSeries GG (Screen + Illumination tabs).
+
 ## [0.2.1] — 2026-06-08
 
 ### Fixed
+
 - **OLED rendered blank by default in 0.2.0.** Enabling per-screen icons (a
   range-based screen handler with `icon-id` next to multi-line text) and a logo
   image event stacked on the same screen were accepted by GameSense but did not

@@ -2,7 +2,7 @@ import { clampPercent } from '../../domain/math.js';
 import { type Display, type DisplayFrame, type Logger } from '../../domain/ports.js';
 import { type GameMetadataInput, type GameSenseClient } from './gamesense-client.js';
 import { type GameSenseHandler } from './handlers/color-handlers.js';
-import { screenImageHandler, screenTextHandler } from './handlers/screen-handlers.js';
+import { screenTextHandler } from './handlers/screen-handlers.js';
 
 /** Binds one GameSense event to a pre-built per-key handler. */
 export interface KeyEventBinding {
@@ -14,33 +14,24 @@ export interface KeyEventBinding {
   readonly handler: GameSenseHandler;
 }
 
-/** The shared OLED text event. The value selects which icon (index into `iconIds`). */
+/** The OLED text event (multi-line). All text pages share it; only the frame changes. */
 export interface ScreenTextBinding {
   readonly event: string;
   readonly lineKeys: readonly string[];
-  readonly iconIds: readonly number[];
   readonly deviceType?: string;
-}
-
-/** One OLED image event with its static bitmap. `id` matches `ScreenContent.imageId`. */
-export interface ScreenImageBinding {
-  readonly id: string;
-  readonly event: string;
-  readonly bytes: readonly number[];
 }
 
 export interface GameSenseDisplayPlan {
   readonly metadata: GameMetadataInput;
   readonly screen?: ScreenTextBinding;
-  readonly images?: readonly ScreenImageBinding[];
   readonly keys: readonly KeyEventBinding[];
 }
 
 /**
- * Implements the {@link Display} port over the GameSense API. At {@link connect}
- * it registers the game and binds every event/handler once (the shared text
- * event, one event per image, and the key events); each {@link render} then only
- * posts current values — matching GameSense's "bind once, stream values" model.
+ * Implements the {@link Display} port over GameSense. Binds at most one text
+ * event and one image event once, plus the key events. Each {@link render}
+ * sends ONLY the active page's event — which fully replaces the OLED, so pages
+ * never stack — mirroring how real GameSense OLED apps rotate content.
  */
 export class GameSenseDisplay implements Display {
   private connected = false;
@@ -56,21 +47,10 @@ export class GameSenseDisplay implements Display {
     await this.client.registerGame(this.plan.metadata);
 
     if (this.plan.screen) {
-      const { event, lineKeys, iconIds, deviceType } = this.plan.screen;
       await this.client.bindEvent({
-        event,
+        event: this.plan.screen.event,
         valueOptional: true,
-        minValue: 0,
-        maxValue: Math.max(0, iconIds.length - 1),
-        handlers: [screenTextHandler(lineKeys, { iconIds, deviceType })],
-      });
-    }
-
-    for (const image of this.plan.images ?? []) {
-      await this.client.bindEvent({
-        event: image.event,
-        valueOptional: true,
-        handlers: [screenImageHandler(image.bytes)],
+        handlers: [screenTextHandler(this.plan.screen.lineKeys, this.plan.screen.deviceType)],
       });
     }
 
@@ -85,7 +65,7 @@ export class GameSenseDisplay implements Display {
 
     this.connected = true;
     this.logger?.debug(
-      `gamesense: connected (text=${this.plan.screen ? 'yes' : 'no'}, images=${this.plan.images?.length ?? 0}, keys=${this.plan.keys.length})`,
+      `gamesense: connected (text=${this.plan.screen ? 'yes' : 'no'}, keys=${this.plan.keys.length})`,
     );
   }
 
@@ -115,22 +95,12 @@ export class GameSenseDisplay implements Display {
 
   private async renderScreen(frame: DisplayFrame): Promise<void> {
     const content = frame.screen;
-    if (content === undefined) return;
+    if (content === undefined || this.plan.screen === undefined) return;
 
-    if (content.kind === 'text' && this.plan.screen) {
-      const { event, lineKeys, iconIds } = this.plan.screen;
-      const iconIndex = Math.max(0, iconIds.indexOf(content.iconId));
-      const frameData: Record<string, unknown> = {};
-      lineKeys.forEach((key, index) => {
-        frameData[key] = content.lines[index] ?? '';
-      });
-      await this.client.sendEvent({ event, value: iconIndex, frame: frameData });
-      return;
-    }
-
-    if (content.kind === 'image') {
-      const image = this.plan.images?.find((candidate) => candidate.id === content.imageId);
-      if (image) await this.client.sendEvent({ event: image.event, value: 0 });
-    }
+    const frameData: Record<string, unknown> = {};
+    this.plan.screen.lineKeys.forEach((key, index) => {
+      frameData[key] = content.lines[index] ?? '';
+    });
+    await this.client.sendEvent({ event: this.plan.screen.event, value: 0, frame: frameData });
   }
 }

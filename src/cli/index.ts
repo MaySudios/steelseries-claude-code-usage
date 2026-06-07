@@ -10,7 +10,7 @@ import { locateGameSenseAddress } from '../infrastructure/gamesense/core-props-l
 import { ConsoleLogger, type LogLevel } from '../infrastructure/logging/console-logger.js';
 import { type Logger } from '../domain/ports.js';
 import { buildDisplayPlan } from '../composition/build-display-plan.js';
-import { buildRuntime, buildUsagePipeline, loadScreenImages } from '../composition/container.js';
+import { buildRuntime, buildUsagePipeline } from '../composition/container.js';
 import { VERSION } from '../version.js';
 import { parseArgs } from './args.js';
 import { previewKeys, previewScreens } from './preview.js';
@@ -84,8 +84,7 @@ async function cmdRun(config: Config, logger: Logger): Promise<number> {
   const address = await locateGameSenseAddress();
   if (!address) return engineMissing(logger);
 
-  const images = await loadScreenImages(config, logger);
-  const { pluginService } = buildRuntime({ config, address, logger, images });
+  const { pluginService } = buildRuntime({ config, address, logger });
   await pluginService.start();
   logger.info(`running — game "${config.game}" on ${address}. Press Ctrl+C to stop.`);
 
@@ -104,22 +103,18 @@ async function cmdOnce(config: Config, logger: Logger): Promise<number> {
   const address = await locateGameSenseAddress();
   if (!address) return engineMissing(logger);
 
-  const images = await loadScreenImages(config, logger);
-  const { pluginService } = buildRuntime({ config, address, logger, images });
+  const { pluginService } = buildRuntime({ config, address, logger });
   await pluginService.runOnce();
   const screen = pluginService.buildFrame().screen;
   process.stdout.write(`Pushed one frame to ${address}.\n`);
-  if (screen?.kind === 'text') {
+  if (screen) {
     process.stdout.write(`OLED:\n${screen.lines.map((l) => `  | ${l}`).join('\n')}\n`);
-  } else if (screen?.kind === 'image') {
-    process.stdout.write(`OLED: image "${screen.imageId}"\n`);
   }
   return 0;
 }
 
 async function cmdPreview(config: Config, logger: Logger): Promise<number> {
-  const images = await loadScreenImages(config, logger);
-  const { renderPlan, plan } = buildDisplayPlan(config, images);
+  const { renderPlan } = buildDisplayPlan(config);
 
   const pipeline = buildUsagePipeline(config, logger);
   const planLimits = pipeline.planUsageSource ? await pipeline.planUsageSource.fetch() : [];
@@ -127,7 +122,7 @@ async function cmdPreview(config: Config, logger: Logger): Promise<number> {
     await pipeline.snapshotProvider.snapshot(planLimits),
   );
 
-  process.stdout.write(`${previewScreens(renderPlan.screens, plan.images ?? [], metrics)}\n`);
+  process.stdout.write(`${previewScreens(renderPlan.screens, metrics)}\n`);
   process.stdout.write(`${previewKeys(config)}\n`);
   return 0;
 }
@@ -211,9 +206,8 @@ async function cmdTestDisplay(config: Config, logger: Logger): Promise<number> {
   const address = await locateGameSenseAddress();
   if (!address) return engineMissing(logger);
 
-  const images = await loadScreenImages(config, logger);
-  const { display } = buildRuntime({ config, address, logger, images });
-  const { renderPlan } = buildDisplayPlan(config, images);
+  const { display } = buildRuntime({ config, address, logger });
+  const { renderPlan } = buildDisplayPlan(config);
   await display.connect();
   process.stdout.write('Blinking a self-test pattern on your keyboard…\n');
 
@@ -223,7 +217,7 @@ async function cmdTestDisplay(config: Config, logger: Logger): Promise<number> {
       renderPlan.keyMetrics.map((binding) => [binding.id, high ? 90 : 15]),
     );
     await display.render({
-      screen: { kind: 'text', lines: ['sscu self-test', `frame ${step + 1}/6`], iconId: 0 },
+      screen: { lines: ['sscu self-test', `frame ${step + 1}/6`] },
       keyValues,
     });
     await delay(700);

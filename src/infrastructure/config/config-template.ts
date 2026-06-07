@@ -40,19 +40,19 @@ usageWarnPct: 70   # block headroom % that turns indicators amber
 usageCriticalPct: 90  # ...and red
 
 # --- OLED screens -------------------------------------------------------------
-# A screen is either TEXT (lines, optional icon) or an IMAGE (logo/bitmap).
-# Text lines use \${metric.id} placeholders. Available ids:
+# Each screen is up to 2 lines of text (the 128x40 OLED renders ~2 rows).
+# Lines use \${metric.id} placeholders. Available ids:
 #   block.cost  block.timeLeft  block.usagePct  block.tokens
 #   block.burnRate  block.burnPct  block.projCost  block.projTokens
 #   today.cost  today.tokens  month.cost  cache.hitPct
 #   model.current  model.level
 #   plan.<id>  plan.<id>.reset   (only when planLimits.enabled)
-# icon: a built-in name (money, clock, lightning, cpu, gpu, ram, timer, music…)
-# image: "claude" (built-in logo) or a path to a .pbm bitmap
-# seconds: how long this screen shows before rotating (defaults to rotateSeconds)
+# seconds: how long a screen shows before rotating (defaults to rotateSeconds).
+# (Images/icons are intentionally not supported — GameSense does not render raw
+#  bitmaps or icons-beside-text reliably across firmware; text is what works.)
 oled:
   enabled: true
-  deviceType: screened        # "screened" (any) or "screened-128x40" (Apex Pro/7)
+  deviceType: screened        # OLED device type ("screened" matches any)
   rotateSeconds: 4            # default seconds per screen (0 = never rotate)
   screens:
     - title: Live block
@@ -67,11 +67,6 @@ oled:
       lines:
         - "today \${today.cost}"
         - "month \${month.cost}"
-    # Optional extras — uncomment and run \`sscu preview\` to check them.
-    # NOTE: many keyboards do NOT render an icon next to MULTI-line text; use an
-    # icon only with a single line, or use a full-screen image/logo screen.
-    # - { title: Logo, image: claude, seconds: 3 }          # built-in logo (or a .pbm path)
-    # - { title: Cost, icon: money, lines: ["5h \${block.cost}"] }  # single line + icon
 
 # --- Per-key RGB --------------------------------------------------------------
 # Each binding reads a metric's 0-100 value and lights "keys" (HID names/codes).

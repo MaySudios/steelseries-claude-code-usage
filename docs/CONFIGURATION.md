@@ -45,29 +45,26 @@ Pricing comes from the [LiteLLM dataset](https://raw.githubusercontent.com/Berri
 | `enabled`       | boolean         | `true`       |                                                                                           |
 | `deviceType`    | string          | `screened`   | `screened` matches any OLED; use `screened-128x40` to target the Apex Pro/7 specifically. |
 | `rotateSeconds` | number (0–3600) | `4`          | Default seconds per screen. `0` = never rotate (always the first screen).                 |
-| `screens`       | array           | (4 built‑in) | Each screen is **text** or **image** (see below).                                         |
+| `screens`       | array           | (3 built‑in) | Each screen has up to 2 lines of text.                                                    |
 
-A **text** screen has `lines: string[]` (templates with `${metric.id}` placeholders — see [Metrics](#metrics)), an optional built‑in `icon` (drawn in the left 32 px), an optional `title`, and an optional `seconds` (its own rotation duration). The Apex Pro OLED comfortably fits **two** short rows.
+A screen has `lines: string[]` (templates with `${metric.id}` placeholders — see [Metrics](#metrics)), an optional `title`, and an optional `seconds` (its own rotation duration). The Apex Pro OLED comfortably fits **two** short rows.
 
-An **image** screen has `image` — either the built‑in `claude` logo or a path to a `.pbm` bitmap (centered onto 128×40) — plus optional `title`/`seconds`.
-
-Built‑in icon names: `money`, `clock`, `timer`, `lightning`/`bolt`, `cpu`, `gpu`, `ram`, `music`, `play`, `pause`, `health`, `mana`, `temperature`, … (or a numeric id 0–43).
-
-> Custom per‑pixel icons _beside_ text are a GameSense limitation — use a built‑in `icon`, or a full‑screen `image` screen for a logo. `sscu preview` shows exactly what renders.
+> Why text only? GameSense does not render raw bitmaps or an icon-beside-text reliably across SteelSeries firmware (SDK issues [#119](https://github.com/SteelSeries/gamesense-sdk/issues/119) / [#61](https://github.com/SteelSeries/gamesense-sdk/issues/61)), so the OLED is text — exactly what real GameSense OLED apps use. `sscu preview` shows what renders.
 
 ```yaml
 oled:
   enabled: true
   rotateSeconds: 4
   screens:
-    - { title: Logo, image: claude, seconds: 3 }
     - title: Live block
-      icon: money
       seconds: 6
       lines:
         - '5h ${block.cost}  ${block.timeLeft}'
         - 'use ${block.usagePct}  ${block.tokens}'
-    - { title: Splash, image: ~/my-logo.pbm }
+    - title: Totals
+      lines:
+        - 'today ${today.cost}'
+        - 'month ${month.cost}'
 ```
 
 ## `keys`

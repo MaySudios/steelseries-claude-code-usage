@@ -30,10 +30,10 @@ export interface PlanUsageSource {
   fetch(): Promise<PlanLimit[]>;
 }
 
-/** What to show on the OLED this tick: either text lines (+icon) or an image. */
-export type ScreenContent =
-  | { readonly kind: 'text'; readonly lines: readonly string[]; readonly iconId: number }
-  | { readonly kind: 'image'; readonly imageId: string };
+/** What to show on the OLED this tick: text lines (top to bottom). */
+export interface ScreenContent {
+  readonly lines: readonly string[];
+}
 
 /**
  * Everything the orchestrator needs to push to the hardware in one tick.

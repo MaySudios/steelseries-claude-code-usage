@@ -60,9 +60,9 @@ function buildSnapshot(nowIso: string, planLimits: PlanLimit[] = []): UsageSnaps
 const RENDER_PLAN: RenderPlan = {
   oledEnabled: true,
   screens: [
-    { kind: 'text', lines: ['5h ${block.cost}'], iconId: 0, seconds: 4 },
-    { kind: 'text', lines: ['use ${block.usagePct}'], iconId: 0, seconds: 4 },
-    { kind: 'text', lines: ['m ${month.cost}'], iconId: 0, seconds: 4 },
+    { lines: ['5h ${block.cost}'], seconds: 4 },
+    { lines: ['use ${block.usagePct}'], seconds: 4 },
+    { lines: ['m ${month.cost}'], seconds: 4 },
   ],
   keysEnabled: true,
   keyMetrics: [
@@ -72,7 +72,7 @@ const RENDER_PLAN: RenderPlan = {
 };
 
 function textLines(frame: { screen: ScreenContent | undefined }): readonly string[] | undefined {
-  return frame.screen?.kind === 'text' ? frame.screen.lines : undefined;
+  return frame.screen ? frame.screen.lines : undefined;
 }
 
 function service(deps: {

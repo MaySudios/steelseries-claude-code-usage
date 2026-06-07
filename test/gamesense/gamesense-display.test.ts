@@ -13,7 +13,7 @@ function setup(): { transport: FakeTransport; display: GameSenseDisplay } {
   const client = new GameSenseClient('127.0.0.1:1', transport, 'CLAUDE_CODE_USAGE');
   const plan: GameSenseDisplayPlan = {
     metadata: { displayName: 'Claude Usage', developer: 'MaySudios' },
-    screen: { event: 'OLED', lineKeys: ['line0', 'line1'], iconIds: [0] },
+    screen: { event: 'OLED', lineKeys: ['line0', 'line1'] },
     keys: [
       {
         id: 'headroom',
@@ -25,7 +25,7 @@ function setup(): { transport: FakeTransport; display: GameSenseDisplay } {
   return { transport, display: new GameSenseDisplay(client, plan) };
 }
 
-const textScreen = (lines: string[]) => ({ kind: 'text', lines, iconId: 0 }) as const;
+const textScreen = (lines: string[]) => ({ lines }) as const;
 
 describe('GameSenseDisplay.connect', () => {
   it('registers the game then binds the screen and key events', async () => {
