@@ -1,0 +1,84 @@
+{
+  "name": "steelseries-claude-code-usage",
+  "version": "0.1.0",
+  "description": "Display live Claude Code usage, cost and 5-hour-block burn rate on your SteelSeries Apex Pro OLED and per-key RGB via the GameSense SDK.",
+  "keywords": [
+    "steelseries",
+    "gamesense",
+    "apex-pro",
+    "claude-code",
+    "claude",
+    "anthropic",
+    "oled",
+    "rgb",
+    "usage",
+    "ccusage",
+    "cli"
+  ],
+  "license": "Apache-2.0",
+  "author": "MaySudios",
+  "homepage": "https://github.com/MaySudios/steelseries-claude-code-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaySudios/steelseries-claude-code-usage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MaySudios/steelseries-claude-code-usage/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "steelseries-claude-usage": "dist/cli/index.js",
+    "sscu": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/cli/index.ts",
+    "start": "node dist/cli/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "yaml": "^2.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,18 @@
+# Minimal example — OLED shows the live block; the function-key row is a
+# green→red headroom gauge. Everything else uses defaults.
+
+oled:
+  enabled: true
+  rotateSeconds: 0
+  screens:
+    - lines:
+        - '5h ${block.cost}  ${block.timeLeft}'
+        - 'use ${block.usagePct}'
+
+keys:
+  enabled: true
+  bindings:
+    - id: headroom
+      type: gauge
+      metric: block.usagePct
+      keys: [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12]
