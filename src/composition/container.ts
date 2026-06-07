@@ -12,6 +12,7 @@ import { type Config } from '../infrastructure/config/schema.js';
 import { GameSenseClient } from '../infrastructure/gamesense/gamesense-client.js';
 import { GameSenseDisplay } from '../infrastructure/gamesense/gamesense-display.js';
 import { FetchHttpTransport } from '../infrastructure/gamesense/http-transport.js';
+import { isBuiltInImage, resolveImage } from '../infrastructure/gamesense/image-loader.js';
 import { LiteLlmPricingProvider } from '../infrastructure/pricing/litellm-pricing-provider.js';
 import { systemClock } from '../infrastructure/system-clock.js';
 import { buildDisplayPlan } from './build-display-plan.js';
@@ -24,6 +25,32 @@ export interface BuildRuntimeOptions {
   readonly clock?: Clock;
   /** Injected fetch (testing / custom agents). */
   readonly fetchImpl?: typeof fetch;
+  /** Pre-loaded image-screen bytes (file images); built-ins resolve themselves. */
+  readonly images?: Record<string, number[]>;
+}
+
+/**
+ * Pre-load any file-based image screens (PBM) referenced in config so the
+ * (synchronous) plan builder has their bytes. Built-in images are skipped here.
+ * Failures are logged and the screen is simply omitted.
+ */
+export async function loadScreenImages(
+  config: Config,
+  logger: Logger,
+): Promise<Record<string, number[]>> {
+  const sources = new Set<string>();
+  for (const screen of config.oled.screens) {
+    if ('image' in screen && !isBuiltInImage(screen.image)) sources.add(screen.image);
+  }
+  const images: Record<string, number[]> = {};
+  for (const source of sources) {
+    try {
+      images[source] = await resolveImage(source);
+    } catch (error) {
+      logger.warn(`oled image "${source}" could not be loaded: ${String(error)}`);
+    }
+  }
+  return images;
 }
 
 export interface Runtime {
@@ -65,6 +92,7 @@ export function buildUsagePipeline(
     clock,
     costMode: config.costMode,
     sessionLengthMs: config.sessionLengthHours * 60 * 60 * 1000,
+    recentWindowMinutes: config.recentWindowMinutes,
   });
 
   const metricResolver = new MetricResolver({
@@ -101,7 +129,7 @@ export function buildRuntime(options: BuildRuntimeOptions): Runtime {
     options.fetchImpl,
   );
 
-  const { plan, renderPlan } = buildDisplayPlan(config);
+  const { plan, renderPlan } = buildDisplayPlan(config, options.images ?? {});
   const transport = new FetchHttpTransport(4000, options.fetchImpl);
   const client = new GameSenseClient(address, transport, config.game);
   const display = new GameSenseDisplay(client, plan, logger);

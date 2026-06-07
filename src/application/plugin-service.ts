@@ -4,21 +4,27 @@ import {
   type DisplayFrame,
   type Logger,
   type PlanUsageSource,
+  type ScreenContent,
 } from '../domain/ports.js';
 import { type Metric } from '../domain/metric.js';
 import { type PlanLimit } from '../domain/plan-usage.js';
 import { type MetricResolver, renderTemplate } from './metric-resolver.js';
 import { type SnapshotProvider } from './snapshot-provider.js';
 
-export interface RenderScreen {
-  readonly lines: readonly string[];
-}
+/** A screen in the rotation, with its own display duration. */
+export type RenderScreen =
+  | {
+      readonly kind: 'text';
+      readonly lines: readonly string[];
+      readonly iconId: number;
+      readonly seconds: number;
+    }
+  | { readonly kind: 'image'; readonly imageId: string; readonly seconds: number };
 
 /** Tells the service how to turn resolved metrics into a {@link DisplayFrame}. */
 export interface RenderPlan {
   readonly oledEnabled: boolean;
   readonly screens: readonly RenderScreen[];
-  readonly rotateSeconds: number;
   readonly keysEnabled: boolean;
   readonly keyMetrics: readonly { readonly id: string; readonly metric: string }[];
 }
@@ -91,10 +97,7 @@ export class PluginService {
   /** The frame that would currently be pushed (used by the loop and `test-display`). */
   buildFrame(): DisplayFrame {
     const plan = this.deps.renderPlan;
-    const screen = plan.oledEnabled ? this.currentScreen() : undefined;
-    const screenLines = screen
-      ? screen.lines.map((line) => renderTemplate(line, this.metrics))
-      : [];
+    const screen = plan.oledEnabled ? this.currentScreenContent() : undefined;
 
     const keyValues: Record<string, number> = {};
     if (plan.keysEnabled) {
@@ -102,7 +105,19 @@ export class PluginService {
         keyValues[binding.id] = this.metrics.get(binding.metric)?.percent ?? 0;
       }
     }
-    return { screenLines, keyValues };
+    return { screen, keyValues };
+  }
+
+  /** Resolve the active screen's templates into concrete {@link ScreenContent}. */
+  private currentScreenContent(): ScreenContent | undefined {
+    const screen = this.currentScreen();
+    if (screen === undefined) return undefined;
+    if (screen.kind === 'image') return { kind: 'image', imageId: screen.imageId };
+    return {
+      kind: 'text',
+      lines: screen.lines.map((line) => renderTemplate(line, this.metrics)),
+      iconId: screen.iconId,
+    };
   }
 
   get currentMetrics(): ReadonlyMap<string, Metric> {
@@ -138,14 +153,24 @@ export class PluginService {
     }
   }
 
+  /** Pick the active screen from a per-screen-duration schedule. */
   private currentScreen(): RenderScreen | undefined {
-    const { screens, rotateSeconds } = this.deps.renderPlan;
+    const { screens } = this.deps.renderPlan;
     const first = screens[0];
     if (first === undefined) return undefined;
-    if (screens.length <= 1 || rotateSeconds <= 0) return first;
-    const elapsed = this.deps.clock.now().getTime() - this.startedAtMs;
-    const index = Math.floor(elapsed / (rotateSeconds * 1000)) % screens.length;
-    return screens[index] ?? first;
+    if (screens.length === 1) return first;
+
+    const totalSeconds = screens.reduce((sum, screen) => sum + Math.max(0, screen.seconds), 0);
+    if (totalSeconds <= 0) return first; // all durations 0 → no rotation
+
+    let position = ((this.deps.clock.now().getTime() - this.startedAtMs) / 1000) % totalSeconds;
+    for (const screen of screens) {
+      const duration = Math.max(0, screen.seconds);
+      if (duration <= 0) continue; // 0 → skipped in rotation
+      if (position < duration) return screen;
+      position -= duration;
+    }
+    return first;
   }
 
   private async renderOnce(): Promise<void> {

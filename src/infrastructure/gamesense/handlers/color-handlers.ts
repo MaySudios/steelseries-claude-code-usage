@@ -76,18 +76,29 @@ export function thresholdHandler(
   return handler;
 }
 
+export interface PulseOptions {
+  /** Flash frequency just above the idle cutoff. Default 1 Hz. */
+  readonly minHz?: number;
+  /** Flash frequency at full value. Default 2 Hz (deliberately calm). */
+  readonly maxHz?: number;
+  /** Value (0–100) below which the key stays dark. Default 5. */
+  readonly idleBelow?: number;
+}
+
 /**
- * A single (or grouped) key holding a static colour whose flash *speed* scales
- * with the value — idle when quiet, fast pulse when busy. Ideal for a live
- * "burn rate" indicator.
+ * A single (or grouped) key holding a static colour that is dark while idle and
+ * pulses — gently by default — once the value rises. Ideal for a live
+ * "burn rate" indicator that only reacts when Claude is actually generating.
  */
 export function pulseHandler(
   keys: readonly number[],
   color: Rgb,
-  minHz: number,
-  maxHz: number,
+  options: PulseOptions = {},
 ): GameSenseHandler {
-  const mid = Math.round((minHz + maxHz) / 2);
+  const minHz = options.minHz ?? 1;
+  const maxHz = options.maxHz ?? 2;
+  const idle = Math.min(99, Math.max(1, Math.round(options.idleBelow ?? 5)));
+  const mid = Math.round((idle + 100) / 2);
   return {
     'device-type': PER_KEY_DEVICE,
     'custom-zone-keys': [...keys],
@@ -95,10 +106,9 @@ export function pulseHandler(
     color: rgbObject(color),
     rate: {
       frequency: [
-        { low: 0, high: 5, frequency: 0 }, // effectively off when idle
-        { low: 6, high: 33, frequency: minHz },
-        { low: 34, high: 66, frequency: mid },
-        { low: 67, high: 100, frequency: maxHz },
+        { low: 0, high: idle - 1, frequency: 0 }, // dark while idle
+        { low: idle, high: mid, frequency: minHz },
+        { low: mid + 1, high: 100, frequency: maxHz },
       ],
     },
   };
@@ -111,5 +121,26 @@ export function staticColorHandler(keys: readonly number[], color: Rgb): GameSen
     'custom-zone-keys': [...keys],
     mode: 'color',
     color: rgbObject(color),
+  };
+}
+
+/**
+ * "Just light up when active": dark below `idleBelow`, then a steady solid
+ * colour (no flashing) above it. The calm alternative to {@link pulseHandler}.
+ */
+export function activeIndicatorHandler(
+  keys: readonly number[],
+  color: Rgb,
+  idleBelow = 5,
+): GameSenseHandler {
+  const idle = Math.min(99, Math.max(1, Math.round(idleBelow)));
+  return {
+    'device-type': PER_KEY_DEVICE,
+    'custom-zone-keys': [...keys],
+    mode: 'color',
+    color: [
+      { low: 0, high: idle - 1, color: { red: 0, green: 0, blue: 0 } },
+      { low: idle, high: 100, color: rgbObject(color) },
+    ],
   };
 }

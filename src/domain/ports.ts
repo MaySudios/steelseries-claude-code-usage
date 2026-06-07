@@ -30,14 +30,19 @@ export interface PlanUsageSource {
   fetch(): Promise<PlanLimit[]>;
 }
 
+/** What to show on the OLED this tick: either text lines (+icon) or an image. */
+export type ScreenContent =
+  | { readonly kind: 'text'; readonly lines: readonly string[]; readonly iconId: number }
+  | { readonly kind: 'image'; readonly imageId: string };
+
 /**
  * Everything the orchestrator needs to push to the hardware in one tick.
  * Intentionally value-driven (no device JSON) so it stays decoupled from
  * GameSense and is trivial to fake in tests.
  */
 export interface DisplayFrame {
-  /** OLED rows, top to bottom. Implementations pad/truncate to the device. */
-  readonly screenLines: readonly string[];
+  /** OLED content, or `undefined` to leave the screen untouched. */
+  readonly screen: ScreenContent | undefined;
   /** Configured key-binding id → control value (0–100) that drives its handler. */
   readonly keyValues: Readonly<Record<string, number>>;
 }

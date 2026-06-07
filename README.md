@@ -32,13 +32,14 @@ Everything is **local‑first**: it parses the same `~/.claude/projects/**/*.jso
 
 ## Features
 
-- 🖥️ **OLED screens** — multiple, rotating, fully templated text lines.
-- 🌈 **Per‑key RGB** — `gauge` (bar across keys), `threshold` (severity colour + flash), and `pulse` (flash speed scales with burn rate).
+- 🖥️ **OLED screens** — multiple rotating screens with templated text, **built‑in icons**, per‑screen duration, and **image/logo screens** (a built‑in Claude splash or your own `.pbm`).
+- 🌈 **Per‑key RGB** — `gauge` (bar across keys), `threshold` (severity colour + flash), and `pulse` (a calm, idle‑off "Claude is generating right now" indicator).
+- 👀 **Terminal preview** — `sscu preview` shows your screens (as art) and key colours without touching the keyboard.
 - 🧮 **Accurate cost** — the ccusage cost model (4 token classes × per‑model pricing), with `auto`/`calculate`/`display` modes.
-- ⏱️ **5‑hour blocks** — burn rate, projection, and headroom‑vs‑peak.
+- ⏱️ **5‑hour blocks** — live burn rate, projection, and headroom‑vs‑peak.
 - 🔌 **Offline‑capable** — bundled pricing fallback; live [LiteLLM](https://github.com/BerriAI/litellm) pricing when online.
 - ⚙️ **Configurable** — a single annotated YAML/JSON file decides what shows where.
-- 🧪 **Tested** — 140+ unit tests, clean hexagonal architecture (SOLID/DRY/KISS).
+- 🧪 **Tested** — 170+ unit tests, clean hexagonal architecture (SOLID/DRY/KISS).
 - 🖱️ **Cross‑platform** — Windows & macOS (anywhere SteelSeries Engine runs).
 
 ## Requirements
@@ -77,6 +78,7 @@ sscu run             # start the daemon — watch your keyboard
 | ---------------------------- | ----------------------------------------------------------------------- |
 | `sscu run`                   | Start the daemon (default command).                                     |
 | `sscu once`                  | Push a single frame and exit (handy for testing).                       |
+| `sscu preview`               | Render your OLED screens + key colours in the terminal (no device).     |
 | `sscu stats [--json]`        | Print computed metrics to stdout — no keyboard required.                |
 | `sscu doctor`                | Diagnose the environment (Engine, Claude data, config, sample numbers). |
 | `sscu test-display`          | Blink a self‑test pattern so you can see OLED + RGB working.            |
@@ -156,7 +158,9 @@ Lines are plain text with `${metric.id}` placeholders.
 
 - **`gauge`** — fills more keys as the value rises, coloured along a `from → to` gradient.
 - **`threshold`** — solid colour by value `bands`, with an optional `flash` above a level.
-- **`pulse`** — one `color` that flashes faster as the value rises (`minHz`–`maxHz`).
+- **`pulse`** — dark below `idleBelow`, then a calm pulse that scales gently from `minHz` to `maxHz`. Set `steady: true` to just light up solid when active instead of flashing.
+
+OLED screens can be **text** (with `lines`, an optional built‑in `icon`, and a per‑screen `seconds`) or an **image** (`image: claude` for the built‑in logo, or a path to a `.pbm`). Run `sscu preview` to see them.
 
 **Keys** accept friendly names (`a`–`z`, `0`–`9`, `f1`–`f12`, `space`, `enter`, `esc`, `tab`, arrows, `scrolllock`, `printscreen`, `insert`, …) or raw USB HID codes.
 

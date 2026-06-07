@@ -17,6 +17,7 @@ export interface DefaultSnapshotProviderDeps {
   readonly clock: Clock;
   readonly costMode: CostMode;
   readonly sessionLengthMs: number;
+  readonly recentWindowMinutes: number;
 }
 
 /**
@@ -41,6 +42,7 @@ export class DefaultSnapshotProvider implements SnapshotProvider {
         sessionLengthMs: this.deps.sessionLengthMs,
       }),
       clock: this.deps.clock,
+      recentWindowMinutes: this.deps.recentWindowMinutes,
     });
     return service.build(entries, planLimits);
   }

@@ -25,7 +25,8 @@ Every field is optional; omit it to use the default. Unknown top‑level keys ar
 | `sessionLengthHours`    | number (1–24)                  | `5`                 | Billing‑block length.                                                                             |
 | `lookbackDays`          | number (0–3650)                | `35`                | Ignore transcripts older than this (keeps polling fast). `0` = no limit.                          |
 | `currencySymbol`        | string                         | `$`                 | Cosmetic prefix for money values.                                                                 |
-| `burnScaleTokensPerMin` | number                         | `3000`              | Burn rate that maps to 100 % on burn gauges/pulses.                                               |
+| `recentWindowMinutes`   | number (0–120)                 | `5`                 | Window for the **live burn rate** (tokens in the last N min). `0` = no idle‑off.                  |
+| `burnScaleTokensPerMin` | number                         | `50000`             | Burn rate that maps to 100 % on the burn gauge/pulse.                                             |
 | `usageWarnPct`          | number (0–100)                 | `70`                | Headroom % that turns indicators **amber**.                                                       |
 | `usageCriticalPct`      | number (0–100)                 | `90`                | Headroom % that turns indicators **red**.                                                         |
 
@@ -39,28 +40,34 @@ Pricing comes from the [LiteLLM dataset](https://raw.githubusercontent.com/Berri
 
 ## `oled`
 
-| Key             | Type            | Default      | Notes                                                                                              |
-| --------------- | --------------- | ------------ | -------------------------------------------------------------------------------------------------- |
-| `enabled`       | boolean         | `true`       |                                                                                                    |
-| `deviceType`    | string          | `screened`   | `screened` matches any OLED; use `screened-128x40` to target the Apex Pro/7 specifically.          |
-| `rotateSeconds` | number (0–3600) | `4`          | Seconds per screen. `0` = never rotate (always the first screen).                                  |
-| `screens`       | array           | (3 built‑in) | Each screen has `lines: string[]` (one entry per OLED row, top to bottom) and an optional `title`. |
+| Key             | Type            | Default      | Notes                                                                                     |
+| --------------- | --------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| `enabled`       | boolean         | `true`       |                                                                                           |
+| `deviceType`    | string          | `screened`   | `screened` matches any OLED; use `screened-128x40` to target the Apex Pro/7 specifically. |
+| `rotateSeconds` | number (0–3600) | `4`          | Default seconds per screen. `0` = never rotate (always the first screen).                 |
+| `screens`       | array           | (4 built‑in) | Each screen is **text** or **image** (see below).                                         |
 
-Lines are templates: literal text plus `${metric.id}` placeholders (see [Metrics](#metrics)). The Apex Pro OLED comfortably fits **two** short rows.
+A **text** screen has `lines: string[]` (templates with `${metric.id}` placeholders — see [Metrics](#metrics)), an optional built‑in `icon` (drawn in the left 32 px), an optional `title`, and an optional `seconds` (its own rotation duration). The Apex Pro OLED comfortably fits **two** short rows.
+
+An **image** screen has `image` — either the built‑in `claude` logo or a path to a `.pbm` bitmap (centered onto 128×40) — plus optional `title`/`seconds`.
+
+Built‑in icon names: `money`, `clock`, `timer`, `lightning`/`bolt`, `cpu`, `gpu`, `ram`, `music`, `play`, `pause`, `health`, `mana`, `temperature`, … (or a numeric id 0–43).
+
+> Custom per‑pixel icons _beside_ text are a GameSense limitation — use a built‑in `icon`, or a full‑screen `image` screen for a logo. `sscu preview` shows exactly what renders.
 
 ```yaml
 oled:
   enabled: true
-  rotateSeconds: 5
+  rotateSeconds: 4
   screens:
+    - { title: Logo, image: claude, seconds: 3 }
     - title: Live block
+      icon: money
+      seconds: 6
       lines:
         - '5h ${block.cost}  ${block.timeLeft}'
         - 'use ${block.usagePct}  ${block.tokens}'
-    - title: Today
-      lines:
-        - 'today ${today.cost}'
-        - 'month ${month.cost}'
+    - { title: Splash, image: ~/my-logo.pbm }
 ```
 
 ## `keys`
@@ -103,7 +110,10 @@ Solid colour chosen by value bands; optional flash above a level.
 
 ### `type: pulse`
 
-One colour that flashes faster as the value rises.
+Dark below `idleBelow`, then a calm pulse scaling from `minHz` to `maxHz`. Paired
+with the recent‑window burn metric, this means the key is **off when idle** and
+pulses only while Claude is generating. Set `steady: true` to light up solid
+(no flashing) instead.
 
 ```yaml
 - id: burn
@@ -111,8 +121,10 @@ One colour that flashes faster as the value rises.
   metric: block.burnPct
   keys: [scrolllock]
   color: '#8000ff'
-  minHz: 1
-  maxHz: 8
+  minHz: 1 # just above idle
+  maxHz: 2 # at full burn (kept calm)
+  idleBelow: 5 # dark below this value
+  steady: false # true = solid colour when active
 ```
 
 ### Key names

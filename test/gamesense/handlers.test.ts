@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { rgb } from '../../src/domain/color.js';
 import {
+  activeIndicatorHandler,
   gaugeHandler,
   pulseHandler,
   staticColorHandler,
   thresholdHandler,
 } from '../../src/infrastructure/gamesense/handlers/color-handlers.js';
-import { screenTextHandler } from '../../src/infrastructure/gamesense/handlers/screen-handlers.js';
+import {
+  resolveIcon,
+  screenImageHandler,
+  screenTextHandler,
+} from '../../src/infrastructure/gamesense/handlers/screen-handlers.js';
 
 const GREEN = rgb(0, 255, 0);
 const AMBER = rgb(255, 191, 0);
@@ -63,17 +68,33 @@ describe('thresholdHandler', () => {
 });
 
 describe('pulseHandler', () => {
-  it('maps value bands to escalating flash frequencies', () => {
-    const handler = pulseHandler([44], rgb(128, 0, 255), 1, 8);
+  it('stays dark below the idle cutoff then ramps gently', () => {
+    const handler = pulseHandler([44], rgb(128, 0, 255), { minHz: 1, maxHz: 8 });
     expect(handler).toMatchObject({ mode: 'color', 'custom-zone-keys': [44] });
     expect(handler.rate).toEqual({
       frequency: [
-        { low: 0, high: 5, frequency: 0 },
-        { low: 6, high: 33, frequency: 1 },
-        { low: 34, high: 66, frequency: 5 },
-        { low: 67, high: 100, frequency: 8 },
+        { low: 0, high: 4, frequency: 0 }, // idleBelow default 5
+        { low: 5, high: 53, frequency: 1 },
+        { low: 54, high: 100, frequency: 8 },
       ],
     });
+  });
+
+  it('uses calm defaults (1–2 Hz)', () => {
+    const rate = pulseHandler([44], rgb(0, 0, 0)).rate as { frequency: { frequency: number }[] };
+    expect(rate.frequency.map((f) => f.frequency)).toEqual([0, 1, 2]);
+  });
+});
+
+describe('activeIndicatorHandler', () => {
+  it('is dark below idle then a steady solid colour', () => {
+    const handler = activeIndicatorHandler([44], rgb(0, 200, 0), 10);
+    expect(handler).toMatchObject({ mode: 'color', 'custom-zone-keys': [44] });
+    expect(handler.color).toEqual([
+      { low: 0, high: 9, color: { red: 0, green: 0, blue: 0 } },
+      { low: 10, high: 100, color: { red: 0, green: 200, blue: 0 } },
+    ]);
+    expect(handler.rate).toBeUndefined();
   });
 });
 
@@ -107,10 +128,51 @@ describe('screenTextHandler', () => {
   });
 
   it('honours an explicit device type', () => {
-    expect(screenTextHandler(['l0'], 'screened-128x40')['device-type']).toBe('screened-128x40');
+    expect(screenTextHandler(['l0'], { deviceType: 'screened-128x40' })['device-type']).toBe(
+      'screened-128x40',
+    );
+  });
+
+  it('builds a range per icon when multiple icons are used', () => {
+    const handler = screenTextHandler(['l0'], { iconIds: [0, 4, 15] });
+    expect(handler.datas).toEqual([
+      {
+        low: 0,
+        high: 0,
+        datas: [{ 'icon-id': 0, lines: [{ 'has-text': true, 'context-frame-key': 'l0' }] }],
+      },
+      {
+        low: 1,
+        high: 1,
+        datas: [{ 'icon-id': 4, lines: [{ 'has-text': true, 'context-frame-key': 'l0' }] }],
+      },
+      {
+        low: 2,
+        high: 2,
+        datas: [{ 'icon-id': 15, lines: [{ 'has-text': true, 'context-frame-key': 'l0' }] }],
+      },
+    ]);
   });
 
   it('throws without lines', () => {
     expect(() => screenTextHandler([])).toThrow(/at least one/);
+  });
+});
+
+describe('screenImageHandler', () => {
+  it('builds a 128x40 image handler', () => {
+    const handler = screenImageHandler([1, 2, 3]);
+    expect(handler['device-type']).toBe('screened-128x40');
+    expect(handler.datas).toEqual([{ 'has-text': false, 'image-data': [1, 2, 3] }]);
+  });
+});
+
+describe('resolveIcon', () => {
+  it('maps names and clamps numbers', () => {
+    expect(resolveIcon('money')).toBe(4);
+    expect(resolveIcon('LIGHTNING')).toBe(16);
+    expect(resolveIcon(99)).toBe(43);
+    expect(resolveIcon('nope')).toBe(0);
+    expect(resolveIcon(undefined)).toBe(0);
   });
 });

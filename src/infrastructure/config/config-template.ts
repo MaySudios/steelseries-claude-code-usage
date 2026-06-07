@@ -5,6 +5,7 @@
  */
 export const CONFIG_TEMPLATE = `# steelseries-claude-code-usage configuration
 # Docs: https://github.com/MaySudios/steelseries-claude-code-usage
+# Tip: run \`sscu preview\` to see your screens + key colours in the terminal.
 #
 # Everything here is optional — delete any line to fall back to its default.
 
@@ -31,31 +32,44 @@ lookbackDays: 35
 
 # Cosmetic / thresholds.
 currencySymbol: "$"
-burnScaleTokensPerMin: 3000   # burn rate that maps to 100% on the burn gauge/pulse
-usageWarnPct: 70              # block headroom % that turns indicators amber
-usageCriticalPct: 90          # ...and red
+# Live burn rate: tokens counted over the last N minutes (0 disables idle-off).
+recentWindowMinutes: 5
+# Tokens/min that maps to 100% on the burn gauge/pulse.
+burnScaleTokensPerMin: 50000
+usageWarnPct: 70   # block headroom % that turns indicators amber
+usageCriticalPct: 90  # ...and red
 
-# --- OLED screen --------------------------------------------------------------
-# Lines use \${metric.id} placeholders. Available ids:
+# --- OLED screens -------------------------------------------------------------
+# A screen is either TEXT (lines, optional icon) or an IMAGE (logo/bitmap).
+# Text lines use \${metric.id} placeholders. Available ids:
 #   block.cost  block.timeLeft  block.usagePct  block.tokens
 #   block.burnRate  block.burnPct  block.projCost  block.projTokens
 #   today.cost  today.tokens  month.cost  cache.hitPct
 #   model.current  model.level
 #   plan.<id>  plan.<id>.reset   (only when planLimits.enabled)
+# icon: a built-in name (money, clock, lightning, cpu, gpu, ram, timer, music…)
+# image: "claude" (built-in logo) or a path to a .pbm bitmap
+# seconds: how long this screen shows before rotating (defaults to rotateSeconds)
 oled:
   enabled: true
   deviceType: screened        # "screened" (any) or "screened-128x40" (Apex Pro/7)
-  rotateSeconds: 4            # seconds per screen (0 = never rotate)
+  rotateSeconds: 4            # default seconds per screen (0 = never rotate)
   screens:
+    - title: Logo
+      image: claude
+      seconds: 3
     - title: Live block
+      icon: money
       lines:
         - "5h \${block.cost}  \${block.timeLeft}"
         - "use \${block.usagePct}  \${block.tokens}"
     - title: Burn
+      icon: lightning
       lines:
         - "burn \${block.burnRate}"
         - "proj \${block.projCost}"
     - title: Totals
+      icon: clock
       lines:
         - "today \${today.cost}"
         - "month \${month.cost}"
@@ -64,7 +78,8 @@ oled:
 # Each binding reads a metric's 0-100 value and lights "keys" (HID names/codes).
 # type: gauge      - fills more keys as the value rises (gradient from -> to)
 # type: threshold  - solid colour by value bands, optional flash above a level
-# type: pulse      - one colour that flashes faster as the value rises
+# type: pulse      - dark while idle, then pulses (calm by default); set
+#                    "steady: true" to just light up solid when active.
 keys:
   enabled: true
   bindings:
@@ -79,8 +94,10 @@ keys:
       metric: block.burnPct
       keys: [scrolllock]
       color: "#8000ff"
-      minHz: 1
-      maxHz: 8
+      minHz: 1            # flash speed just above idle
+      maxHz: 2            # ...and at full burn (kept calm)
+      idleBelow: 5        # value below which the key stays dark
+      steady: false       # true = solid colour when active instead of pulsing
     - id: alert
       type: threshold
       metric: block.usagePct

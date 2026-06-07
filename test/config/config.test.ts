@@ -102,7 +102,8 @@ describe('loadConfigFile (round-trip)', () => {
     await writeFile(path, CONFIG_TEMPLATE);
     const config = await loadConfigFile(path);
     expect(config.game).toBe('CLAUDE_CODE_USAGE');
-    expect(config.oled.screens).toHaveLength(3);
+    expect(config.oled.screens).toHaveLength(4); // logo + 3 text
+    expect('image' in config.oled.screens[0]!).toBe(true);
     expect(config.keys.bindings.map((b) => b.id)).toEqual(['headroom', 'burn', 'alert']);
   });
 

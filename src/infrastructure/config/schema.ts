@@ -39,24 +39,51 @@ const pulseBinding = z.object({
   ...baseBinding,
   type: z.literal('pulse'),
   color: hexColor.default('#8000ff'),
+  /** Flash speed just above idle / at full value (Hz). Kept calm by default. */
   minHz: z.number().min(0).max(20).default(1),
-  maxHz: z.number().min(0).max(20).default(8),
+  maxHz: z.number().min(0).max(20).default(2),
+  /** Value (0–100) below which the key stays dark. */
+  idleBelow: z.number().min(0).max(100).default(5),
+  /** Solid colour when active instead of flashing ("just light up"). */
+  steady: z.boolean().default(false),
 });
 
 const keyBinding = z.discriminatedUnion('type', [gaugeBinding, thresholdBinding, pulseBinding]);
 
-const oledScreen = z.object({
-  title: z.string().optional(),
-  lines: z.array(z.string()).min(1),
-});
+const iconValue = z.union([z.string(), z.number().int().min(0).max(43)]);
+
+const textScreen = z
+  .object({
+    title: z.string().optional(),
+    /** OLED rows, top to bottom. Use ${metric.id} placeholders. */
+    lines: z.array(z.string()).min(1),
+    /** Built-in icon shown in the left 32 px (name or id). */
+    icon: iconValue.optional(),
+    /** Override the global rotateSeconds for this screen. */
+    seconds: z.number().min(0).max(3600).optional(),
+  })
+  .strict();
+
+const imageScreen = z
+  .object({
+    title: z.string().optional(),
+    /** Built-in image name (`claude`) or a path to a PBM bitmap. */
+    image: z.string().min(1),
+    seconds: z.number().min(0).max(3600).optional(),
+  })
+  .strict();
+
+const oledScreen = z.union([textScreen, imageScreen]);
 
 const DEFAULT_SCREENS: z.input<typeof oledScreen>[] = [
+  { title: 'Logo', image: 'claude', seconds: 3 },
   {
     title: 'Live block',
+    icon: 'money',
     lines: ['5h ${block.cost}  ${block.timeLeft}', 'use ${block.usagePct}  ${block.tokens}'],
   },
-  { title: 'Burn', lines: ['burn ${block.burnRate}', 'proj ${block.projCost}'] },
-  { title: 'Totals', lines: ['today ${today.cost}', 'month ${month.cost}'] },
+  { title: 'Burn', icon: 'lightning', lines: ['burn ${block.burnRate}', 'proj ${block.projCost}'] },
+  { title: 'Totals', icon: 'clock', lines: ['today ${today.cost}', 'month ${month.cost}'] },
 ];
 
 const DEFAULT_BINDINGS: z.input<typeof keyBinding>[] = [
@@ -99,7 +126,10 @@ export const ConfigSchema = z
     lookbackDays: z.number().min(0).max(3650).default(35),
 
     currencySymbol: z.string().default('$'),
-    burnScaleTokensPerMin: z.number().min(1).default(3000),
+    /** Tokens/min mapped to 100% on the burn gauge/pulse. */
+    burnScaleTokensPerMin: z.number().min(1).default(50000),
+    /** Window for the live burn rate (minutes). */
+    recentWindowMinutes: z.number().min(0).max(120).default(5),
     usageWarnPct: z.number().min(0).max(100).default(70),
     usageCriticalPct: z.number().min(0).max(100).default(90),
 

@@ -13,7 +13,7 @@ function setup(): { transport: FakeTransport; display: GameSenseDisplay } {
   const client = new GameSenseClient('127.0.0.1:1', transport, 'CLAUDE_CODE_USAGE');
   const plan: GameSenseDisplayPlan = {
     metadata: { displayName: 'Claude Usage', developer: 'MaySudios' },
-    screen: { event: 'OLED', lineKeys: ['line0', 'line1'] },
+    screen: { event: 'OLED', lineKeys: ['line0', 'line1'], iconIds: [0] },
     keys: [
       {
         id: 'headroom',
@@ -24,6 +24,8 @@ function setup(): { transport: FakeTransport; display: GameSenseDisplay } {
   };
   return { transport, display: new GameSenseDisplay(client, plan) };
 }
+
+const textScreen = (lines: string[]) => ({ kind: 'text', lines, iconId: 0 }) as const;
 
 describe('GameSenseDisplay.connect', () => {
   it('registers the game then binds the screen and key events', async () => {
@@ -48,7 +50,7 @@ describe('GameSenseDisplay.render', () => {
   it('auto-connects then streams OLED frame text and key values', async () => {
     const { transport, display } = setup();
     await display.render({
-      screenLines: ['top', 'bottom', 'ignored'],
+      screen: textScreen(['top', 'bottom', 'ignored']),
       keyValues: { headroom: 73 },
     });
 
@@ -72,7 +74,7 @@ describe('GameSenseDisplay.render', () => {
     const { transport, display } = setup();
     await display.connect();
     transport.calls.length = 0;
-    await display.render({ screenLines: ['only-one'], keyValues: {} });
+    await display.render({ screen: textScreen(['only-one']), keyValues: {} });
 
     const eventCalls = transport.calls.filter((c) => c.path === '/game_event');
     expect(eventCalls).toHaveLength(1); // only the screen event; no key value supplied

@@ -1,66 +1,59 @@
 # steelseries-claude-code-usage — full annotated configuration
 # Docs: https://github.com/MaySudios/steelseries-claude-code-usage
+# Tip: run `sscu preview` to see your screens + key colours in the terminal.
 #
 # Everything here is optional — delete any line to fall back to its default.
 # This is the same content `sscu config init` writes.
 
-# GameSense game id (UPPERCASE A-Z, 0-9, hyphen, underscore).
 game: CLAUDE_CODE_USAGE
 displayName: Claude Code Usage
 developer: MaySudios
 
-# How often to refresh, in seconds.
 pollIntervalSeconds: 10
 
-# Cost accounting:
-#   auto      - use Claude Code's own cost when present, else compute from tokens
-#   calculate - always compute from tokens x pricing
-#   display   - only show Claude Code's own cost
+# auto | calculate | display
 costMode: auto
-# Never fetch live model pricing from the network (use the bundled table).
 offlinePricing: false
 
-# Billing block length (Claude subscriptions meter against a rolling window).
 sessionLengthHours: 5
-# Ignore transcripts older than this many days (keeps each poll fast).
 lookbackDays: 35
 
-# Cosmetic / thresholds.
 currencySymbol: '$'
-burnScaleTokensPerMin: 3000 # burn rate that maps to 100% on the burn gauge/pulse
-usageWarnPct: 70 # block headroom % that turns indicators amber
-usageCriticalPct: 90 # ...and red
+recentWindowMinutes: 5 # live burn rate window (0 = no idle-off)
+burnScaleTokensPerMin: 50000 # tokens/min mapped to 100% on the burn pulse
+usageWarnPct: 70
+usageCriticalPct: 90
 
-# --- OLED screen --------------------------------------------------------------
-# Lines use ${metric.id} placeholders. Available ids:
-#   block.cost  block.timeLeft  block.usagePct  block.tokens
-#   block.burnRate  block.burnPct  block.projCost  block.projTokens
-#   today.cost  today.tokens  month.cost  cache.hitPct
-#   model.current  model.level
-#   plan.<id>  plan.<id>.reset   (only when planLimits.enabled)
+# --- OLED screens -------------------------------------------------------------
+# Each screen is TEXT (lines + optional icon) or IMAGE (logo/bitmap).
+# Text lines use ${metric.id} placeholders. icon: built-in name. image: "claude"
+# or a .pbm path. seconds: per-screen duration (defaults to rotateSeconds).
 oled:
   enabled: true
-  deviceType: screened # "screened" (any) or "screened-128x40" (Apex Pro/7)
-  rotateSeconds: 4 # seconds per screen (0 = never rotate)
+  deviceType: screened
+  rotateSeconds: 4
   screens:
+    - title: Logo
+      image: claude
+      seconds: 3
     - title: Live block
+      icon: money
       lines:
         - '5h ${block.cost}  ${block.timeLeft}'
         - 'use ${block.usagePct}  ${block.tokens}'
     - title: Burn
+      icon: lightning
       lines:
         - 'burn ${block.burnRate}'
         - 'proj ${block.projCost}'
     - title: Totals
+      icon: clock
       lines:
         - 'today ${today.cost}'
         - 'month ${month.cost}'
 
 # --- Per-key RGB --------------------------------------------------------------
-# Each binding reads a metric's 0-100 value and lights "keys" (HID names/codes).
-# type: gauge      - fills more keys as the value rises (gradient from -> to)
-# type: threshold  - solid colour by value bands, optional flash above a level
-# type: pulse      - one colour that flashes faster as the value rises
+# type: gauge | threshold | pulse
 keys:
   enabled: true
   bindings:
@@ -76,7 +69,9 @@ keys:
       keys: [scrolllock]
       color: '#8000ff'
       minHz: 1
-      maxHz: 8
+      maxHz: 2
+      idleBelow: 5
+      steady: false # true = solid colour when active instead of pulsing
     - id: alert
       type: threshold
       metric: block.usagePct
@@ -88,8 +83,6 @@ keys:
       flash: { atOrAbove: 95, hz: 4 }
 
 # --- Plan limits (optional, Lucxar-style) ------------------------------------
-# When enabled, reads your Claude OAuth token and fetches subscription
-# utilization (5h / weekly / Opus / Sonnet). Off by default; needs network.
 planLimits:
   enabled: false
   # credentialsPath: ~/.claude/.credentials.json

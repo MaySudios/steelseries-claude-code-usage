@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Display, type DisplayFrame } from '../../src/domain/ports.js';
+import { type Display, type DisplayFrame, type ScreenContent } from '../../src/domain/ports.js';
 import { type PlanLimit } from '../../src/domain/plan-usage.js';
 import { BlockCalculator } from '../../src/application/block-calculator.js';
 import { CostCalculator } from '../../src/application/cost-calculator.js';
@@ -59,11 +59,10 @@ function buildSnapshot(nowIso: string, planLimits: PlanLimit[] = []): UsageSnaps
 
 const RENDER_PLAN: RenderPlan = {
   oledEnabled: true,
-  rotateSeconds: 4,
   screens: [
-    { lines: ['5h ${block.cost}'] },
-    { lines: ['use ${block.usagePct}'] },
-    { lines: ['m ${month.cost}'] },
+    { kind: 'text', lines: ['5h ${block.cost}'], iconId: 0, seconds: 4 },
+    { kind: 'text', lines: ['use ${block.usagePct}'], iconId: 0, seconds: 4 },
+    { kind: 'text', lines: ['m ${month.cost}'], iconId: 0, seconds: 4 },
   ],
   keysEnabled: true,
   keyMetrics: [
@@ -71,6 +70,10 @@ const RENDER_PLAN: RenderPlan = {
     { id: 'burn', metric: 'block.burnPct' },
   ],
 };
+
+function textLines(frame: { screen: ScreenContent | undefined }): readonly string[] | undefined {
+  return frame.screen?.kind === 'text' ? frame.screen.lines : undefined;
+}
 
 function service(deps: {
   snapshotProvider: SnapshotProvider;
@@ -106,7 +109,7 @@ describe('PluginService.runOnce', () => {
     expect(display.connects).toBe(1);
     expect(display.frames).toHaveLength(1);
     const frame = display.frames[0]!;
-    expect(frame.screenLines).toEqual(['5h $2.00']); // screen 0 at t=0
+    expect(textLines(frame)).toEqual(['5h $2.00']); // screen 0 at t=0
     expect(frame.keyValues.headroom).toBeCloseTo(20, 6);
     expect(typeof frame.keyValues.burn).toBe('number');
   });
@@ -124,14 +127,14 @@ describe('PluginService OLED rotation', () => {
     const svc = service({ snapshotProvider, display, clock: time.clock });
     await svc.runOnce(); // anchors rotation, screen 0
 
-    time.advance(5_000); // 5s / 4s → index 1
-    expect(svc.buildFrame().screenLines).toEqual(['use 20%']);
+    time.advance(5_000); // 5s into a 12s cycle → screen 1 (4–8s)
+    expect(textLines(svc.buildFrame())).toEqual(['use 20%']);
 
-    time.advance(4_000); // 9s / 4s → index 2
-    expect(svc.buildFrame().screenLines).toEqual(['m $5.00']);
+    time.advance(4_000); // 9s → screen 2 (8–12s)
+    expect(textLines(svc.buildFrame())).toEqual(['m $5.00']);
 
-    time.advance(4_000); // 13s / 4s → index 3 % 3 = 0
-    expect(svc.buildFrame().screenLines).toEqual(['5h $2.00']);
+    time.advance(4_000); // 13s → 1s → screen 0 (0–4s)
+    expect(textLines(svc.buildFrame())).toEqual(['5h $2.00']);
   });
 });
 

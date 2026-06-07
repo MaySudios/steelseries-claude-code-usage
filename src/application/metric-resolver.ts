@@ -85,20 +85,25 @@ export class MetricResolver {
       severity: blockSeverity,
     });
 
-    const burnPct = block ? clampPercent((block.burnRateTokensPerMin / this.burnScale) * 100) : 0;
+    // Burn reflects the *recent* token rate, so it idles to 0 between prompts
+    // (a live "is Claude generating right now" signal, not a block average).
+    const recentRate = snapshot.recentRateTokensPerMin;
+    const burnPct = clampPercent((recentRate / this.burnScale) * 100);
+    const burnSeverity: MetricSeverity =
+      burnPct > 0 ? severityFromPercent(burnPct, this.thresholds) : 'idle';
     add({
       id: 'block.burnRate',
       label: 'burn',
-      value: block ? formatRate(block.burnRateTokensPerMin) : '0/m',
+      value: formatRate(recentRate),
       percent: burnPct,
-      severity: block ? severityFromPercent(burnPct, this.thresholds) : 'idle',
+      severity: burnSeverity,
     });
     add({
       id: 'block.burnPct',
       label: 'burn',
       value: formatPercent(burnPct),
       percent: burnPct,
-      severity: block ? severityFromPercent(burnPct, this.thresholds) : 'idle',
+      severity: burnSeverity,
     });
     add({
       id: 'block.projCost',
