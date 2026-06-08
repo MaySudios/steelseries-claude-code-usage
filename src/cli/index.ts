@@ -7,6 +7,8 @@ import { resolveConfigPath } from '../infrastructure/config/config-paths.js';
 import { CONFIG_TEMPLATE } from '../infrastructure/config/config-template.js';
 import { type Config } from '../infrastructure/config/schema.js';
 import { locateGameSenseAddress } from '../infrastructure/gamesense/core-props-locator.js';
+import { GameSenseClient } from '../infrastructure/gamesense/gamesense-client.js';
+import { FetchHttpTransport } from '../infrastructure/gamesense/http-transport.js';
 import { ConsoleLogger, type LogLevel } from '../infrastructure/logging/console-logger.js';
 import { type Logger } from '../domain/ports.js';
 import { buildDisplayPlan } from '../composition/build-display-plan.js';
@@ -28,6 +30,7 @@ COMMANDS
   stats [--json]      Print computed usage metrics (no device needed)
   doctor              Diagnose environment (Engine, Claude data, config)
   test-display        Blink a self-test pattern on the keyboard
+  reset               Remove the app from SteelSeries GG (clears stale events)
   config init [--force]  Write an annotated config file
   config path         Print the resolved config file path
   help, version
@@ -72,6 +75,8 @@ async function main(argv: string[]): Promise<number> {
     case 'test-display':
     case 'test':
       return cmdTestDisplay(config, logger);
+    case 'reset':
+      return cmdReset(config, logger);
     case 'config':
       return cmdConfig(positionals[0], configPath, flags.force === true);
     default:
@@ -224,6 +229,17 @@ async function cmdTestDisplay(config: Config, logger: Logger): Promise<number> {
   }
   await display.dispose();
   process.stdout.write('Self-test done.\n');
+  return 0;
+}
+
+async function cmdReset(config: Config, logger: Logger): Promise<number> {
+  const address = await locateGameSenseAddress();
+  if (!address) return engineMissing(logger);
+  const client = new GameSenseClient(address, new FetchHttpTransport(4000), config.game);
+  await client.removeGame();
+  process.stdout.write(
+    `Removed "${config.game}" from SteelSeries GG. Start the daemon again to re-register cleanly.\n`,
+  );
   return 0;
 }
 

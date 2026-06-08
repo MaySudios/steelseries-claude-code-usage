@@ -28,26 +28,21 @@ function setup(): { transport: FakeTransport; display: GameSenseDisplay } {
 const textScreen = (lines: string[]) => ({ lines }) as const;
 
 describe('GameSenseDisplay.connect', () => {
-  it('clears stale state, registers the game, then binds the events', async () => {
+  it('registers the game then binds the events (no destructive remove)', async () => {
     const { transport, display } = setup();
     await display.connect();
-    expect(transport.paths()).toEqual([
-      '/remove_game', // clean slate first (drops stale events from old versions)
-      '/game_metadata',
-      '/bind_game_event',
-      '/bind_game_event',
-    ]);
+    expect(transport.paths()).toEqual(['/game_metadata', '/bind_game_event', '/bind_game_event']);
     // The OLED bind must opt into value_optional so repeated text renders.
-    expect(transport.calls[2]?.body.event).toBe('OLED');
-    expect(transport.calls[2]?.body.value_optional).toBe(true);
-    expect(transport.calls[3]?.body.event).toBe('KEY_HEADROOM');
+    expect(transport.calls[1]?.body.event).toBe('OLED');
+    expect(transport.calls[1]?.body.value_optional).toBe(true);
+    expect(transport.calls[2]?.body.event).toBe('KEY_HEADROOM');
   });
 
   it('is idempotent', async () => {
     const { transport, display } = setup();
     await display.connect();
     await display.connect();
-    expect(transport.calls).toHaveLength(4); // remove + metadata + 2 binds
+    expect(transport.calls).toHaveLength(3); // metadata + 2 binds
   });
 });
 

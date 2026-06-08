@@ -48,13 +48,9 @@ export class GameSenseDisplay implements Display {
 
   async connect(): Promise<void> {
     if (this.connected) return;
-    // Clear any stale registration from a previous version (e.g. old image
-    // events) so SteelSeries GG shows a clean, current event list.
-    try {
-      await this.client.removeGame();
-    } catch {
-      /* nothing registered yet — fine */
-    }
+    // Register once and leave it (the pattern real GameSense apps use). We do
+    // NOT remove the game on connect — that wiped GG customisation and could
+    // break the GG "Configure" page. Stale events are cleared via `sscu reset`.
     await this.client.registerGame(this.plan.metadata);
 
     if (this.plan.screen) {

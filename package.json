@@ -1,6 +1,6 @@
 {
   "name": "steelseries-claude-code-usage",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Display live Claude Code usage, cost and 5-hour-block burn rate on your SteelSeries Apex Pro OLED and per-key RGB via the GameSense SDK.",
   "keywords": [
     "steelseries",

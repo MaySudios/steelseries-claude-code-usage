@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] — 2026-06-08
+
+### Fixed
+
+- **0.3.1 broke the GG "Configure" page.** Removing the game on every `connect()`
+  wiped GG state and could leave its config UI broken. Reverted: the daemon now
+  registers once and leaves it (the pattern real GameSense apps use).
+
+### Added
+
+- **`sscu reset`** — removes the app from SteelSeries GG on demand (the clean,
+  user-controlled way to clear stale events, replacing the automatic remove).
+
 ## [0.3.1] — 2026-06-08
 
 Polish for how the app appears in SteelSeries GG, based on inspecting the
