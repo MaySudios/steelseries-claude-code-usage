@@ -17,6 +17,8 @@ const baseBinding = {
   /** Which resolved metric drives this binding (uses its 0–100 `percent`). */
   metric: z.string().min(1),
   keys: z.array(keyToken).min(1),
+  /** Built-in icon (0–43) shown next to this event in SteelSeries GG. */
+  iconId: z.number().int().min(0).max(43).default(0),
 };
 
 const gaugeBinding = z.object({
@@ -85,8 +87,16 @@ const DEFAULT_BINDINGS: z.input<typeof keyBinding>[] = [
     keys: ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12'],
     from: '#00ff00',
     to: '#ff0000',
+    iconId: 4, // money
   },
-  { id: 'burn', type: 'pulse', metric: 'block.burnPct', keys: ['scrolllock'], color: '#8000ff' },
+  {
+    id: 'burn',
+    type: 'pulse',
+    metric: 'block.burnPct',
+    keys: ['scrolllock'],
+    color: '#8000ff',
+    iconId: 16, // lightning
+  },
   {
     id: 'alert',
     type: 'threshold',
@@ -98,6 +108,7 @@ const DEFAULT_BINDINGS: z.input<typeof keyBinding>[] = [
       { upTo: 100, color: '#ff0000' },
     ],
     flash: { atOrAbove: 95, hz: 4 },
+    iconId: 5, // flash
   },
 ];
 
@@ -129,6 +140,9 @@ export const ConfigSchema = z
         enabled: z.boolean().default(true),
         deviceType: z.string().default('screened'),
         rotateSeconds: z.number().min(0).max(3600).default(4),
+        /** Built-in icon (0–43): shown in GG and, if > 0, drawn on the OLED
+         * (it consumes the left 32 px, leaving less room for text). */
+        iconId: z.number().int().min(0).max(43).default(0),
         screens: z.array(oledScreen).min(1).default(DEFAULT_SCREENS),
       })
       .default({}),

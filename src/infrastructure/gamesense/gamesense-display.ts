@@ -12,6 +12,8 @@ export interface KeyEventBinding {
   readonly event: string;
   /** Pre-built color handler (includes `device-type` and `custom-zone-keys`). */
   readonly handler: GameSenseHandler;
+  /** Built-in icon (0–43) shown next to the event in SteelSeries GG. */
+  readonly iconId?: number;
 }
 
 /** The OLED text event (multi-line). All text pages share it; only the frame changes. */
@@ -19,6 +21,8 @@ export interface ScreenTextBinding {
   readonly event: string;
   readonly lineKeys: readonly string[];
   readonly deviceType?: string;
+  /** Built-in icon (0–43): shown in GG and, if > 0, drawn on the OLED. */
+  readonly iconId?: number;
 }
 
 export interface GameSenseDisplayPlan {
@@ -44,13 +48,22 @@ export class GameSenseDisplay implements Display {
 
   async connect(): Promise<void> {
     if (this.connected) return;
+    // Clear any stale registration from a previous version (e.g. old image
+    // events) so SteelSeries GG shows a clean, current event list.
+    try {
+      await this.client.removeGame();
+    } catch {
+      /* nothing registered yet — fine */
+    }
     await this.client.registerGame(this.plan.metadata);
 
     if (this.plan.screen) {
+      const { event, lineKeys, deviceType, iconId = 0 } = this.plan.screen;
       await this.client.bindEvent({
-        event: this.plan.screen.event,
+        event,
         valueOptional: true,
-        handlers: [screenTextHandler(this.plan.screen.lineKeys, this.plan.screen.deviceType)],
+        iconId,
+        handlers: [screenTextHandler(lineKeys, deviceType, iconId)],
       });
     }
 
@@ -59,6 +72,7 @@ export class GameSenseDisplay implements Display {
         event: key.event,
         minValue: 0,
         maxValue: 100,
+        iconId: key.iconId ?? 0,
         handlers: [key.handler],
       });
     }

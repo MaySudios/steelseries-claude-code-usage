@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-06-08
+
+Polish for how the app appears in SteelSeries GG, based on inspecting the
+Engine's own database and how real third-party OLED apps (TIDAL, Spotify,
+Discord, System Monitor) register.
+
+### Added
+
+- **Event icons in GG** — each event now carries a built-in `icon_id` (config
+  `iconId` per key binding + `oled.iconId`), like TIDAL/Discord. Defaults:
+  headroom=money, burn=lightning, alert=flash.
+- **Optional OLED icon** — `oled.iconId > 0` draws an icon next to the text
+  (TIDAL's exact flat `icon-id` + `lines` pattern). Off by default (it consumes
+  the left 32 px).
+
+### Fixed
+
+- **Stale events lingering in GG.** `connect()` now calls `/remove_game` first,
+  so old events from a previous version (e.g. the removed `OLEDIMG`) no longer
+  clutter the GG event list.
+
+### Note
+
+- A custom app **logo** and **friendly per-event display names** (e.g. CS2's
+  "Round Over") are **not available to third-party GameSense apps** — confirmed
+  by the SDK (closed issue #12) and the Engine DB (only partner games like
+  CSGO/DOTA2 have a CDN `app_logo_url`; TIDAL/Spotify/Discord do not). We match
+  the achievable third-party tier: clean name + developer + event icons.
+
 ## [0.3.0] — 2026-06-08
 
 Verified live on real Apex Pro hardware: text + per-key RGB render reliably;

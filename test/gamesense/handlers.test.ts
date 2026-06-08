@@ -127,6 +127,13 @@ describe('screenTextHandler', () => {
     expect(screenTextHandler(['l0'], 'screened-128x40')['device-type']).toBe('screened-128x40');
   });
 
+  it('adds a frame icon when iconId > 0 (TIDAL-style), omits it at 0', () => {
+    const withIcon = screenTextHandler(['l0'], 'screened', 4).datas as Record<string, unknown>[];
+    expect(withIcon[0]?.['icon-id']).toBe(4);
+    const noIcon = screenTextHandler(['l0']).datas as Record<string, unknown>[];
+    expect(noIcon[0]?.['icon-id']).toBeUndefined();
+  });
+
   it('throws without lines', () => {
     expect(() => screenTextHandler([])).toThrow(/at least one/);
   });

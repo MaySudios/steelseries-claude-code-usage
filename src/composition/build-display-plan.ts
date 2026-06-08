@@ -43,6 +43,7 @@ export function buildDisplayPlan(config: Config): BuiltPlan {
         id: binding.id,
         event: eventName(binding.id),
         handler: buildHandler(binding, resolveKeys(binding.keys)),
+        iconId: binding.iconId,
       });
       keyMetrics.push({ id: binding.id, metric: binding.metric });
     }
@@ -56,7 +57,12 @@ export function buildDisplayPlan(config: Config): BuiltPlan {
     },
     screen:
       config.oled.enabled && renderScreens.length > 0
-        ? { event: 'OLED', lineKeys, deviceType: config.oled.deviceType }
+        ? {
+            event: 'OLED',
+            lineKeys,
+            deviceType: config.oled.deviceType,
+            iconId: config.oled.iconId,
+          }
         : undefined,
     keys,
   };

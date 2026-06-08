@@ -54,6 +54,8 @@ oled:
   enabled: true
   deviceType: screened        # OLED device type ("screened" matches any)
   rotateSeconds: 4            # default seconds per screen (0 = never rotate)
+  iconId: 0                  # 0 = none; 1-43 draws a built-in icon on the OLED
+                              # (and in GG) — e.g. 4 money, 15 clock, 16 lightning
   screens:
     - title: Live block
       lines:

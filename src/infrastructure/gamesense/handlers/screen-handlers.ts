@@ -16,16 +16,19 @@ export const GENERIC_SCREEN_DEVICE = 'screened';
 export function screenTextHandler(
   lineKeys: readonly string[],
   deviceType: string = GENERIC_SCREEN_DEVICE,
+  iconId = 0,
 ): GameSenseHandler {
   if (lineKeys.length === 0) throw new Error('screenTextHandler requires at least one line key');
+  // Flat frame with optional icon-id + multi-line lines — exactly TIDAL's
+  // working pattern (icon-id alongside `lines`, no ranges).
+  const frame: Record<string, unknown> = {
+    lines: lineKeys.map((key) => ({ 'has-text': true, 'context-frame-key': key })),
+  };
+  if (iconId > 0) frame['icon-id'] = iconId;
   return {
     'device-type': deviceType,
     mode: 'screen',
     zone: 'one',
-    datas: [
-      {
-        lines: lineKeys.map((key) => ({ 'has-text': true, 'context-frame-key': key })),
-      },
-    ],
+    datas: [frame],
   };
 }
